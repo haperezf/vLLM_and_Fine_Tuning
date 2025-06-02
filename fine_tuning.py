@@ -16,13 +16,13 @@ import os
 # ---------------------------------------------------------------
 # Asegúrate de reemplazar esta ruta con la ubicación exacta en tu disco.
 # Ejemplo: r"C:\LLM\FTLLM\models\mistral-7b"
-model_path = r"C:\LLM\FTLLM\models\mistral"
+model_path = "./models/mistral"
 
 # ---------------------------------------------------------------
 # 1.1) RUTA ABSOLUTA DONDE GUARDARÁS EL MODELO FINETUNED
 # ---------------------------------------------------------------
 # Debe existir o se creará automáticamente
-output_dir = r"C:\LLM\FTLLM\mistral-7b-finetuned"
+output_dir = "./models/mistral-7b-finetuned"
 
 # Asegurémonos de que la carpeta exista
 os.makedirs(output_dir, exist_ok=True)
@@ -77,8 +77,8 @@ model = get_peft_model(model, lora_config)
 # 5) CARGA LOS CSVs PARA FINE-TUNING
 # ---------------------------------------------------------------
 # Asegúrate de tener qa_dataset.csv y glosario_dataset.csv en el mismo directorio
-qa_df = pd.read_csv(r"C:\LLM\FTLLM\qa_dataset.csv", encoding="utf-8")
-glosario_df = pd.read_csv(r"C:\LLM\FTLLM\glosario_dataset.csv", encoding="utf-8")
+qa_df = pd.read_csv("./dataset/qa_dataset.csv", encoding="utf-8")
+glosario_df = pd.read_csv("./dataset/glosario_dataset.csv", encoding="utf-8")
 
 combined_df = pd.concat([qa_df, glosario_df], ignore_index=True)
 dataset = Dataset.from_pandas(combined_df)
