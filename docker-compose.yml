@@ -19,7 +19,7 @@ services:
     ipc: host
     image: vllm/vllm-openai:latest
     command: >
-      --model /models/mistral-7b-merged
+      --model /models/mistral
       --gpu-memory-utilization 0.98
       --max-model-len 2048
       --tensor-parallel-size 1
