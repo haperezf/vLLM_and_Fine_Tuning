@@ -1,167 +1,176 @@
-# 📡 vLLM + Fine-tuning de Mistral 7B para Telecomunicaciones
+# 📡 vLLM + Fine‑Tuning de Mistral‑7B para Telecomunicaciones
 
-Este repositorio permite:
+Este repositorio contiene el flujo completo para descargar, afinar, fusionar y desplegar **Mistral‑7B‑Instruct‑v0.3** con conocimientos específicos del dominio de telecomunicaciones.
 
-- Descargar y preparar el modelo **Mistral-7B-Instruct-v0.3** desde Hugging Face.
-- Realizar **fine-tuning especializado en telecomunicaciones** utilizando LoRA con cuantización en 4 bits.
-- Unir el modelo original con los pesos ajustados (merge).
-- Desplegar el modelo en una instancia de `vLLM` para inferencia concurrente.
-- Convertir el modelo final al formato **GGUF** para uso en **LM Studio**.
+## ✨ Funcionalidades
+
+- **Descarga** automática del modelo base desde Hugging Face.
+- **Fine‑tuning** con LoRA (4‑bit) empleando conjuntos `qa_dataset.csv` y `glosario_dataset.csv`.
+- **Fusión (merge)** de los adaptadores LoRA con el modelo original.
+- **Despliegue** en `vLLM` para inferencia concurrente.
+- **Conversión** a formato **GGUF** compatible con **LM Studio** o `llama.cpp`.
 
 ---
 
 ## 🖥️ Requisitos
 
-- GPU NVIDIA RTX 3080 o superior (mínimo 16 GB VRAM)
-- Python 3.10+
-- Docker
-- pip packages:
-  ```bash
-  pip install -r requirements.txt
-````
+| Recurso | Recomendación mínima |
+|---------|----------------------|
+| GPU     | NVIDIA RTX 3080 (≥16 GB VRAM) |
+| CPU     | 8 núcleos |
+| RAM     | 32 GB |
+| SO      | Linux, WSL 2 o Windows 10+ |
+| Software| Python 3.10+, Docker |
+
+Instala las dependencias de Python:
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del proyecto
 
-```
+```text
 .
 ├── dataset/
 │   ├── qa_dataset.csv
 │   └── glosario_dataset.csv
 ├── models/
-│   ├── mistral/                 # Modelo descargado desde HF
-│   ├── mistral-7b-finetuned/    # Modelo después del fine-tuning
-│   ├── mistral-7b-merged/       # Modelo con LoRA fusionado
-│   └── mistral-7b-gguf/         # Modelo exportado a GGUF
+│   ├── mistral/              # Modelo descargado de HF
+│   ├── mistral-7b-finetuned/ # Modelo después del fine‑tuning
+│   ├── mistral-7b-merged/    # Modelo con LoRA fusionado
+│   └── mistral-7b-gguf/      # Modelo exportado a GGUF
 ├── scripts/
 │   ├── download_model.py
 │   ├── fine_tuning.py
 │   ├── merge_models.py
 │   ├── convert_hf_to_gguf.py
 │   ├── gguf_writer.py
-│   └── vLLM_Test.py
+│   └── vllm_test.py
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
 
-## 🚀 Flujo de Trabajo
+## 🚀 Flujo de trabajo
 
-### 1. 📥 Descargar el Modelo Base
+### 1. Descargar el modelo base
 
 ```bash
-python download_model.py
+python scripts/download_model.py
 ```
 
-Esto descargará `mistralai/Mistral-7B-Instruct-v0.3` a `./models/mistral/`.
+Descarga **`mistralai/Mistral‑7B‑Instruct‑v0.3`** en `./models/mistral/`.
 
 ---
 
-### 2. 🧠 Fine-tuning con Datos de Telecomunicaciones
+### 2. Fine‑tuning con datos de telecomunicaciones
 
 ```bash
-python fine_tuning.py
+python scripts/fine_tuning.py
 ```
 
-Entrena el modelo con `qa_dataset.csv` y `glosario_dataset.csv`. El modelo ajustado se guarda en `./models/mistral-7b-finetuned/`.
+Entrena el modelo con los archivos del directorio `dataset/`. El resultado se guarda en `./models/mistral-7b-finetuned/`.
 
 ---
 
-### 3. 🔗 Fusión del Modelo Base + LoRA
+### 3. Fusión del modelo base y LoRA
 
 ```bash
-python merge_models.py
+python scripts/merge_models.py
 ```
 
-Esto crea un modelo final en `./models/mistral-7b-merged/` con los pesos combinados.
+Genera `./models/mistral-7b-merged/` con los pesos consolidados.
 
 ---
 
-### 4. 🧪 Pruebas de Sesiones Simultáneas
-
-Lanza 10 hilos concurrentes con peticiones tipo Chat OpenAI para medir desempeño del modelo usando `vLLM`.
+### 4. Pruebas de carga concurrente
 
 ```bash
-python vLLM_Test.py
+python scripts/vllm_test.py --threads 10
 ```
 
-📌 **Resultados esperados**:
-
-* Antes del fine-tuning: El modelo “alucina” al hablar de telecomunicaciones.
-* Después del fine-tuning: Da definiciones precisas y relevantes de redes como **HFC**, **GPON**, etc.
+El script lanza 10 hilos simultáneos usando la API de `vLLM` y muestra *throughput* y *latency* antes y después del fine‑tuning.
 
 ---
 
-### 5. 🐳 Despliegue con Docker y vLLM
+### 5. Despliegue con Docker + vLLM
 
-Asegúrate de que el path en `docker-compose.yml` apunte a `./models/mistral-7b-merged/`.
+Asegúrate de que la ruta configurada en `docker-compose.yml` apunte a `./models/mistral-7b-merged/`, luego:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-El API estará disponible en: [http://localhost:8000/v1](http://localhost:8000/v1)
+El endpoint REST estará en <http://localhost:8000/v1>.
 
 ---
 
-### 6. 🔄 Conversión a GGUF para LM Studio
+### 6. Conversión a GGUF
 
 ```bash
-python convert_hf_to_gguf.py \
-  --dir-model ./models/mistral-7b-merged \
-  --outfile ./models/mistral-7b-gguf/mistral-7b-telecom.gguf \
-  --outtype f16
+python scripts/convert_hf_to_gguf.py   --dir-model ./models/mistral-7b-merged   --outfile   ./models/mistral-7b-gguf/mistral-7b-telecom.gguf   --outtype   f16
 ```
 
-Esto genera un archivo `.gguf` compatible con LM Studio o llama.cpp.
+El archivo `.gguf` resultante es compatible con **LM Studio** y `llama.cpp`.
 
 ---
 
-## 🧪 Evaluación del Fine-tuning
-
-El archivo `vLLM_Test.py` demuestra cómo evaluar la capacidad del modelo antes y después del ajuste.
+## 🧪 Ejemplo de evaluación
 
 ```python
 MESSAGES = [
-    {"role": "system", "content": "Eres un ingeniero experto en telecomunicaciones..."},
-    {"role": "user", "content": "Describe un problema típico en redes GPON o HFC."}
+    {
+        "role": "system",
+        "content": "Eres un ingeniero experto en telecomunicaciones..."
+    },
+    {
+        "role": "user",
+        "content": "Describe un problema típico en redes GPON o HFC."
+    }
 ]
 ```
 
-Después del entrenamiento, el modelo responde con precisión técnica en español, sin inventar información.
+- **Sin fine‑tuning:** respuestas vagas o alucinaciones.  
+- **Con fine‑tuning:** explicaciones técnicas, referencias correctas a GPON/HFC y mejores prácticas.
 
 ---
 
-## 🧰 Scripts Incluidos
+## 🧰 Descripción de scripts
 
-* `download_model.py`: descarga el modelo base desde Hugging Face.
-* `fine_tuning.py`: realiza fine-tuning con LoRA + 4-bit quantization.
-* `merge_models.py`: fusiona el modelo base con el adaptador LoRA.
-* `vLLM_Test.py`: lanza pruebas multihilo vía API de vLLM.
-* `convert_hf_to_gguf.py` y `gguf_writer.py`: convierten el modelo al formato GGUF.
+| Script | Descripción |
+|--------|-------------|
+| `download_model.py` | Descarga el modelo base desde Hugging Face. |
+| `fine_tuning.py` | Aplica LoRA + cuantización 4‑bit. |
+| `merge_models.py` | Fusiona pesos LoRA y produce el modelo final. |
+| `vllm_test.py` | Benchmark multihilo usando la API de `vLLM`. |
+| `convert_hf_to_gguf.py` | Convierte el modelo a GGUF. |
+| `gguf_writer.py` | Utilidad auxiliar para la conversión. |
 
 ---
 
 ## 📌 Notas
 
-* El tokenizer de Mistral no incluye `pad_token` por defecto; se ajusta automáticamente en los scripts.
-* El modelo final puede ser usado en **LM Studio** sin problemas luego de la conversión.
+- El tokenizer de Mistral no trae `pad_token`; los scripts lo añaden automáticamente.
+- Después de convertir a GGUF, carga el modelo en **LM Studio** sin pasos adicionales.
+- Ajusta los hiperparámetros de `fine_tuning.py` (batch size, lr, epochs) según tu GPU.
 
 ---
 
 ## 🤝 Créditos
 
-Este proyecto combina herramientas de:
+Proyecto basado en:
 
-* [HuggingFace Transformers](https://huggingface.co)
-* [vLLM](https://github.com/vllm-project/vllm)
-* [PEFT / LoRA](https://github.com/huggingface/peft)
-* [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- [Hugging Face Transformers]  
+- [vLLM Project]  
+- [PEFT / LoRA]  
+- [llama.cpp]
 
 ---
 
 ## 📜 Licencia
 
-Este repositorio es solo para fines educativos y de experimentación. Respeta las licencias de cada modelo base utilizado.
+Este repositorio se proporciona únicamente con fines educativos y de experimentación. Verifica y respeta las licencias y términos de uso del modelo base y de cada dependencia.
